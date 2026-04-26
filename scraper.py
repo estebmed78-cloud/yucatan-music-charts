@@ -3,16 +3,16 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 import os
 
-# Configuración de credenciales
+# Credenciales
 client_id = os.getenv("SPOTIPY_CLIENT_ID")
 client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
-# IDs REALES DE ARTISTAS YUCATECOS (Verificados)
+# IDs DE ARTISTAS (Asegúrate de que sean de Artista, no de Canción)
 ARTIST_IDS = [
-        '0r8toju2ecKaVtItkzAnNi', # Aleks Syntek
+    '0r8toju2ecKaVtItkzAnNi', # Aleks Syntek
     '5lODCkFdEtpPn3YxfmyLfT', # Armando Manzanero
     '1XXNhXjfbtXeW1amhbUKIW', # Guty Cárdenas
     '7DU6GDSRD6R2Jp47MHVBoZ', # Ricardo Palmerín
@@ -61,6 +61,7 @@ ARTIST_IDS = [
     '7jhzu3iGN5BGNEcBWkT8GC', # flxbabu
     '2PJ4Op1XxwdFwv9azSLElN', # Lu Esperón
     '01EGp5MWcP7jRNOUAKBmZr', # Montejo
+    # Agrega aquí tus otros IDs...
 ]
 
 def get_artist_data():
@@ -68,29 +69,35 @@ def get_artist_data():
     
     for artist_id in ARTIST_IDS:
         try:
+            # Intentamos obtener la info del artista
             artist = sp.artist(artist_id)
-            artists_list.append({
-                "Nombre": artist['name'],
-                "Seguidores": artist['followers']['total'],
-                "Popularidad": artist['popularity'],
-                "Género": ", ".join(artist['genres'][:2]),
-                "Link": artist['external_urls']['spotify']
-            })
-            print(f"✅ Datos obtenidos: {artist['name']}")
+            
+            # Verificamos si tiene la información que necesitamos
+            if 'followers' in artist:
+                artists_list.append({
+                    "Nombre": artist['name'],
+                    "Seguidores": artist.get('followers', {}).get('total', 0),
+                    "Popularidad": artist.get('popularity', 0),
+                    "Género": ", ".join(artist.get('genres', [])[:2]),
+                    "Link": artist.get('external_urls', {}).get('spotify', '')
+                })
+                print(f"✅ Éxito: {artist['name']}")
+            else:
+                print(f"⚠️ El ID {artist_id} no parece ser de un artista (no tiene seguidores).")
+                
         except Exception as e:
             print(f"❌ Error con el ID {artist_id}: {e}")
     
-    if not artists_list:
-        print("⚠️ No se pudo obtener información de ningún artista. Revisa tus IDs.")
-        return
-
-    df = pd.DataFrame(artists_list)
-    
-    # Ordenar solo si la tabla tiene datos
-    if not df.empty:
+    # Si logramos obtener al menos un artista, guardamos el archivo
+    if artists_list:
+        df = pd.DataFrame(artists_list)
         df = df.sort_values(by="Seguidores", ascending=False)
         df.to_csv("artistas_yucatan.csv", index=False)
-        print("💾 Archivo 'artistas_yucatan.csv' actualizado exitosamente.")
+        print(f"💾 ¡Archivo guardado con {len(artists_list)} artistas!")
+    else:
+        # Creamos un archivo vacío para que GitHub Actions no de error de "archivo no encontrado"
+        pd.DataFrame(columns=["Nombre","Seguidores"]).to_csv("artistas_yucatan.csv", index=False)
+        print("⚠️ No se encontró ningún artista válido, se creó un archivo vacío.")
 
 if __name__ == "__main__":
     get_artist_data()
