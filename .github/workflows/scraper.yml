@@ -1,0 +1,35 @@
+name: Actualizar datos de Spotify
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Se ejecuta diario a las 12 AM
+  workflow_dispatch: # Permite ejecutarlo manualmente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar dependencias
+        run: pip install spotipy pandas
+
+      - name: Ejecutar scraper
+        env:
+          SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
+          SPOTIPY_CLIENT_SECRET: ${{ secrets.SPOTIPY_CLIENT_SECRET }}
+        run: python scraper.py
+
+      - name: Guardar cambios en el CSV
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add artistas_yucatan.csv
+          git commit -m "Auto-update: Datos de artistas" || exit 0
+          git push
