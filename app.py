@@ -1,36 +1,22 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Yuca Music Chart", page_icon="🎸")
+st.set_page_config(layout="wide")
+st.title("Yucatán Artist Chart (Spotify)")
 
-st.title("🎸 Yucatán Music Chart")
-st.subheader("Ranking de artistas yucatecos basado en datos de Spotify")
-
-# Cargar los datos
 try:
     df = pd.read_csv("artistas_yucatan.csv")
     
-    # Mostrar el Top 1 (El más seguido)
-    top_artista = df.iloc[0]
-    st.metric(label="Artista #1", value=top_artista['Nombre'], delta=f"{top_artista['Seguidores']} seguidores")
+    # Formatear números con comas para que se vea profesional
+    df['Listeners'] = df['Listeners'].apply(lambda x: f"{x:,}")
+    df['Peak'] = df['Peak'].apply(lambda x: f"{x:,}")
+    
+    # Colorear el Daily +/- (Verde si es positivo, rojo si es negativo)
+    def color_daily(val):
+        color = 'green' if val > 0 else 'red' if val < 0 else 'gray'
+        return f'color: {color}'
 
-    # Mostrar tabla estilizada
-    st.write("### Ranking")
-    st.dataframe(
-        df,
-        column_config={
-            "Link": st.column_config.LinkColumn("Spotify Link"),
-            "Popularidad": st.column_config.ProgressColumn("Popularidad", format="%d", min_value=0, max_value=100)
-        },
-        hide_index=True,
-        use_container_width=True
-    )
+    st.table(df[['Nombre', 'Listeners', 'Daily', 'Peak']])
 
-    # Gráfico de barras
-    st.write("### Comparativa de Seguidores")
-    st.bar_chart(data=df, x="Nombre", y="Seguidores")
-
-except FileNotFoundError:
-    st.error("Aún no hay datos disponibles. El scraper debe ejecutarse primero.")
-
-st.caption("Los datos se actualizan automáticamente cada 24 horas.")
+except:
+    st.error("No hay datos todavía. Ejecuta el scraper en GitHub Actions.")
