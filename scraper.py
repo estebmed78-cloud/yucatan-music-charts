@@ -3,17 +3,16 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 import os
 
-# Configuración de credenciales (las tomaremos de variables de entorno)
+# Configuración de credenciales
 client_id = os.getenv("SPOTIPY_CLIENT_ID")
 client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
-# Lista de IDs de artistas yucatecos (puedes añadir más buscando su ID en Spotify)
-# Ejemplo: https://open.spotify.com/artist/6P7U36ZUnp9vYv0999_ID -> El ID es lo último
+# IDs REALES DE ARTISTAS YUCATECOS (Verificados)
 ARTIST_IDS = [
-    '0r8toju2ecKaVtItkzAnNi', # Aleks Syntek
+        '0r8toju2ecKaVtItkzAnNi', # Aleks Syntek
     '5lODCkFdEtpPn3YxfmyLfT', # Armando Manzanero
     '1XXNhXjfbtXeW1amhbUKIW', # Guty Cárdenas
     '7DU6GDSRD6R2Jp47MHVBoZ', # Ricardo Palmerín
@@ -62,11 +61,11 @@ ARTIST_IDS = [
     '7jhzu3iGN5BGNEcBWkT8GC', # flxbabu
     '2PJ4Op1XxwdFwv9azSLElN', # Lu Esperón
     '01EGp5MWcP7jRNOUAKBmZr', # Montejo
-    # Agrega aquí los IDs que quieras
 ]
 
 def get_artist_data():
     artists_list = []
+    
     for artist_id in ARTIST_IDS:
         try:
             artist = sp.artist(artist_id)
@@ -74,16 +73,24 @@ def get_artist_data():
                 "Nombre": artist['name'],
                 "Seguidores": artist['followers']['total'],
                 "Popularidad": artist['popularity'],
-                "Género": ", ".join(artist['genres'][:2]), # Los primeros 2 géneros
+                "Género": ", ".join(artist['genres'][:2]),
                 "Link": artist['external_urls']['spotify']
             })
+            print(f"✅ Datos obtenidos: {artist['name']}")
         except Exception as e:
-            print(f"Error con el artista {artist_id}: {e}")
+            print(f"❌ Error con el ID {artist_id}: {e}")
     
+    if not artists_list:
+        print("⚠️ No se pudo obtener información de ningún artista. Revisa tus IDs.")
+        return
+
     df = pd.DataFrame(artists_list)
-    df = df.sort_values(by="Seguidores", ascending=False)
-    df.to_csv("artistas_yucatan.csv", index=False)
-    print("Datos actualizados correctamente.")
+    
+    # Ordenar solo si la tabla tiene datos
+    if not df.empty:
+        df = df.sort_values(by="Seguidores", ascending=False)
+        df.to_csv("artistas_yucatan.csv", index=False)
+        print("💾 Archivo 'artistas_yucatan.csv' actualizado exitosamente.")
 
 if __name__ == "__main__":
     get_artist_data()
