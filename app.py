@@ -1,22 +1,34 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(layout="wide")
-st.title("Yucatán Artist Chart (Spotify)")
+st.set_page_config(page_title="YucaCharts", layout="wide")
+
+st.markdown("""
+    <style>
+    .reportview-container { background: #f0f2f6; }
+    th { background-color: #1DB954 !important; color: white !important; }
+    </style>
+    """, unsafe_allow_all_headers=True)
+
+st.title("Yucatán Music Chart")
+st.caption("Actualizado diariamente con datos reales de Spotify")
 
 try:
     df = pd.read_csv("artistas_yucatan.csv")
     
-    # Formatear números con comas para que se vea profesional
-    df['Listeners'] = df['Listeners'].apply(lambda x: f"{x:,}")
-    df['Peak'] = df['Peak'].apply(lambda x: f"{x:,}")
+    # Formatear números con comas para que sea legible
+    df_display = df[['Nombre', 'Listeners', 'Daily', 'Peak']].copy()
     
-    # Colorear el Daily +/- (Verde si es positivo, rojo si es negativo)
+    # Función para poner color al Daily +/-
     def color_daily(val):
-        color = 'green' if val > 0 else 'red' if val < 0 else 'gray'
-        return f'color: {color}'
+        color = 'green' if val > 0 else 'red' if val < 0 else 'black'
+        return f'color: {color}; font-weight: bold'
 
-    st.table(df[['Nombre', 'Listeners', 'Daily', 'Peak']])
+    st.dataframe(
+        df_display.style.applymap(color_daily, subset=['Daily']),
+        use_container_width=True,
+        hide_index=True
+    )
 
-except:
-    st.error("No hay datos todavía. Ejecuta el scraper en GitHub Actions.")
+except Exception as e:
+    st.warning("Esperando la primera actualización de datos... (Ejecuta el Scraper en GitHub)")
